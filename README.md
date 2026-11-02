@@ -252,8 +252,9 @@ shell on Windows is PowerShell 5.1, which does not support it.
 | `tools/export_session_log.py` | Commit your agent transcripts to git. |
 | `tools/check_secrets.py` | Pre-commit credential scan to avoid leaking your API key. |
 | `config/repos.toml` | Source repos and their label mappings. |
-| `docs/decisions.md` | Decisions the brief did not specify. Fill in as you go. |
-| `review-findings.md` | Exercise B - you will fill this |
+| `labs/` | One folder per weekly lab (`labs/W01/`, `labs/W02/`, …). Index: `labs/README.md`. |
+| `labs/W01/decisions.md` | Decisions the brief did not specify. Fill in as you go. |
+| `labs/W01/review-findings.md` | Exercise B - you will fill this |
 | `improvement-log.md` | Runs all semester. Start it today. |
 
 ## Commands

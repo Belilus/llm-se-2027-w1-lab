@@ -37,8 +37,8 @@ Exercise A was built on 2 Nov 2026 (after the lab session, which I missed), with
 - **Date**: 2026-11-02
 - **What happened**: The first batch over 20 dev issues fired all calls back to back. The Gemini key is on the free tier (15 requests/minute), so 3 of 20 issues came back as `TriageFailure: LMRateLimitError`. The agent's retry is immediate, so the retry was also rate-limited and wasted.
 - **Class**: `context`
-- **Evidence**: `results/dev20.jsonl` (textual 5421, 5423, 5426); `src/triage/extract.py` retry loop
-- **What I did about it**: Waited a minute and re-ran the 3 issues one by one (`results/dev20-retry.jsonl`). Recorded "retry has no backoff" in `docs/decisions.md`.
+- **Evidence**: `labs/W01/results/dev20.jsonl` (textual 5421, 5423, 5426); `src/triage/extract.py` retry loop
+- **What I did about it**: Waited a minute and re-ran the 3 issues one by one (`labs/W01/results/dev20-retry.jsonl`). Recorded "retry has no backoff" in `labs/W01/decisions.md`.
 - **Did it work?**: Yes for the rerun; the code still has no backoff — the real fix (backoff on 429, separate from retry on invalid output) is open.
 
 ---
@@ -59,8 +59,8 @@ Exercise A was built on 2 Nov 2026 (after the lab session, which I missed), with
 - **Date**: 2026-11-02
 - **What happened**: The brief never defined severity, and the dataset has no gold severity. The agent invented a 4-level scale and a definition ("critical = outage, data loss or security hole") without asking. On 20 issues the model used only `low` and `medium` — never `high`/`critical` — so the field cannot drive escalation.
 - **Class**: `spec`
-- **Evidence**: `src/triage/extract.py` (`severity` OutputField desc); `results/dev20.jsonl`
-- **What I did about it**: Wrote it down in `docs/decisions.md`. The fix belongs in the specification (see `issue-routing/spec.md` in the W2 examples, which defines severity → SLA), plus a hand-labelled gold set later in the course.
+- **Evidence**: `src/triage/extract.py` (`severity` OutputField desc); `labs/W01/results/dev20.jsonl`
+- **What I did about it**: Wrote it down in `labs/W01/decisions.md`. The fix belongs in the specification (see `issue-routing/spec.md` in the W2 examples, which defines severity → SLA), plus a hand-labelled gold set later in the course.
 - **Did it work?**: Not yet — open.
 
 ---
@@ -70,8 +70,8 @@ Exercise A was built on 2 Nov 2026 (after the lab session, which I missed), with
 - **Date**: 2026-11-02
 - **What happened**: The model reports `confidence` 0.9–1.0 on every issue, including hono #3908 where it said `bug` and the gold label is `enhancement` (confidence 0.95). The agent had defined confidence as self-reported, so it carries almost no information.
 - **Class**: `concept`
-- **Evidence**: `results/dev20.jsonl`, hono 3908
-- **What I did about it**: Documented in `review-findings.md` and `docs/decisions.md` that confidence is uncalibrated and unused.
+- **Evidence**: `labs/W01/results/dev20.jsonl`, hono 3908
+- **What I did about it**: Documented in `labs/W01/review-findings.md` and `labs/W01/decisions.md` that confidence is uncalibrated and unused.
 - **Did it work?**: Open — calibration is W6/W7 material (ADR-0005 in the W2 examples says the same).
 
 ---

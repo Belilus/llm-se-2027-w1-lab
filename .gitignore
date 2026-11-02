@@ -7,3 +7,6 @@ __pycache__/
 data/raw/
 sessions/*.jsonl
 !sessions/.gitkeep
+
+# Symlink to the Google Drive course notes (never pushed)
+/course-notes
