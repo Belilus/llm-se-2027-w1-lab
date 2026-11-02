@@ -116,21 +116,88 @@ Confidence: `certain` | `probable` | `uncertain`
 
 ## Part 2 — found by running
 
-After `git apply`, `uv run pytest`, `uv run pyright` and the batch run.
+After `git apply`, `uv run pytest`, `uv run pyright` and the batch run (3.11.2026).
+
+**How this part was done.** I missed the lab session and left part 1 empty when I locked
+it: I did not know yet what to look for in a diff. Part 2 was done with Claude Code: it
+ran the tools, then walked me through the diff line by line, and I wrote this section
+with it. So the "found by reading" list below was found by an AI reading the diff, not by
+me. That is the honest version of the measurement.
 
 ### What the tooling found that I did not
 
-- **Which tool** (pytest / pyright / running it):
-- **What it showed**:
-- **Would I have found this by reading?** (be honest):
+- **Which tool**: pytest
+- **What it showed**: 15 passed. The tests are green, as the agent claimed. That is the
+  finding: green tests here prove nothing about the batch path (see below).
+- **Would I have found this by reading?** Not applicable; it is not a defect.
 
-### What I found by reading that the tooling did not
+- **Which tool**: running it (`batch --split dev --offline`)
+- **What it showed**: crash, `ModuleNotFoundError: No module named 'levenshtein_fast'`,
+  in `router.py` `find_duplicates` → `similarity.py:7`. The main command the change adds
+  does not run. No test reaches that import: every batch test has 0 or 1 issues, and
+  `find_duplicates` returns early when `len(issues) < 2`.
+- **Would I have found this by reading?** Yes. The package is not in `pyproject.toml`,
+  and the `# type: ignore[import-not-found]` on that line says so out loud.
 
-- 
+- **Which tool**: pyright
+- **What it showed**: 1 error, `similarity.py:11` "Argument type is unknown" (the result
+  of `ratio` from the unresolved import).
+- **Would I have found this by reading?** Yes, same root cause as the crash.
+
+### What was found by reading that the tooling did not
+
+1. **The batch path bypasses validation** (`extract.py` `triage_raw`, `router.py`
+   `route_raw`). Raw model strings go straight to routing, skipping `TriageRecord` and the
+   `coerce_*` functions. Checked by calling `route_raw` directly: severity `"Critical"`
+   gives `sla_hours=72, escalate=False` (the correct answer is 4 and True); `"High"` gives
+   72 instead of 24; `"urgent"` gives 72 with no error; issue type `"Bug"` lands in
+   `triage-clarify`. The justification ("so batches stay fast") does not hold: the model
+   call dominates, not building a record.
+2. **Silent default contradicts the policy** (`policy.py` `DEFAULT_SLA_HOURS`,
+   `sla_for_raw`). The docstring of `sla_for` says the `KeyError` is deliberate, so a bad
+   severity fails loudly instead of getting "a plausible-looking default that nobody ever
+   notices". The change adds exactly that default.
+3. **Two routers disagree on the same issue** (`router.py`). `route_raw` drops both
+   rules in `route`: bug without repro → `triage-clarify`, and high severity with low
+   confidence → escalate. A high-severity bug, no repro, confidence 0.3: `route` sends it
+   to `triage-clarify`, `route_raw` to `engineering`.
+4. **The stub hides it** (`stub.py` `triage_raw`). The stub builds a validated record
+   and then flattens it, so `--offline` always produces clean values. Only the live path
+   is broken, and no test runs the live path.
+5. **Shell injection** (`similarity.py` `blame_context`). Builds a shell command from the
+   issue title with an f-string and runs it with `shell=True`. Issue titles are untrusted
+   public text; a title with a `'` in it runs arbitrary commands. The function is not
+   called anywhere (dead code), and `extract.py` says issue text must "never [go] near a
+   shell".
+6. **Unknown dependency** (`similarity.py:7`). `levenshtein_fast` is not declared, and
+   its warning is silenced. An agent-invented package name is a supply-chain risk
+   (someone can register it). We did not install it.
+7. **Quadratic duplicate detection** (`router.py` `find_duplicates`). The double loop
+   visits all n² pairs and skips half; 240 issues is ~57k iterations, a 10k-issue day is
+   10^8. Dedup by `number` alone ignores `repo`, so issue #12 in two repos collapses into one.
+8. **Vocabulary break** (`router.py`, `policy.py`: `ticket_priority`). `schema.py` says
+   nothing in the package calls severity "priority". Small, but it shows the agent did not
+   read the codebase's rules.
+9. **Tests that confirm the wrong thing** (`tests/exercise_b/test_batch.py`). Fixtures
+   use strings `"true"` and `"0.9"`, which locks in the unvalidated shape as normal. No
+   test has two or more issues, so duplicate detection is never exercised. `Routing` has
+   no issue number, so a report cannot say which issue went where.
 
 ### Anything the tooling reported that turned out not to be a problem
 
-- 
+- The pyright warnings in `extract.py` (`reportUnknownMemberType` on dspy) were there
+  before the change; they are not caused by it.
+
+### What would have had to be different for these to be caught
+
+- A test with two or more issues, and one that feeds `route_raw` a capitalised severity,
+  would have caught the crash and finding 1.
+- One routing function that only accepts a `TriageRecord` makes findings 1–4 impossible
+  by type: pyright would reject passing a raw dict.
+- A review rule: any new dependency, `subprocess` or `shell=True` needs explicit sign-off
+  (findings 5, 6).
+- Reading the docstrings of the files the diff touches: they state the rules that
+  findings 2, 5 and 8 break.
 
 ---
 
