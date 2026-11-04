@@ -16,6 +16,12 @@ routing tables below. Equal inputs SHALL produce equal outputs.
 Routing SHALL produce a `Routing` value with fields `queue` (string), `sla_hours` (positive
 integer), `escalate` (boolean) and `reason` (non-empty string naming the rule applied).
 
+#### Scenario: All result fields are present
+- **GIVEN** a validated `TriageRecord` with `issue_type = enhancement`, `severity = low`
+- **WHEN** routing runs
+- **THEN** the result has a string `queue`, a positive integer `sla_hours` and a boolean `escalate`
+- **AND** `reason` is a non-empty string naming the rule applied
+
 ### Requirement: Queue by Issue Type
 Unless another requirement in this spec overrides it, the queue SHALL be determined by
 `issue_type`:
