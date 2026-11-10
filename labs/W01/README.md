@@ -6,7 +6,7 @@ Notes and the slide summary: `course-notes/שבועות/W01 קוד זול, אמ�
 | File | What | Status |
 |---|---|---|
 | `decisions.md` | Decisions the brief did not specify | done (Exercise A) |
-| `review-findings.md` | Exercise A surprises; Exercise B parts 1 and 2; scoring | A done; B empty |
+| `review-findings.md` | Exercise A surprises; Exercise B parts 1 and 2; scoring | A done; B part 1 left empty, part 2 done |
 | `results/` | Exercise A run over 20 dev issues | done |
 | `exercise-b/` | Released diff and its README | to review |
 | `../../src/triage/` | Exercise A code | done |

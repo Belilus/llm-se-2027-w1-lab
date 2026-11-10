@@ -10,3 +10,6 @@ sessions/*.jsonl
 
 # Symlink to the Google Drive course notes (never pushed)
 /course-notes
+
+# macOS
+.DS_Store
